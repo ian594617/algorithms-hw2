@@ -35,7 +35,8 @@
 | 하고 싶은 것 | 명령 |
 | --- | --- |
 | 테스트 | `make test` |
-| 웹 서버 (포트 8000) | `make serve` |
+| 웹 서버 (포트 8000, 체이닝) | `make serve` |
+| 선형 탐지 웹 서버 | `make serve TABLE=linear` |
 | 체이닝 충돌 실험 | `make experiment` |
 | 체이닝·선형 탐지 비교 | `make experiment-compare` |
 | 추가 과제 PDF 보고서 | `make report` |
