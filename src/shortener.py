@@ -15,6 +15,10 @@ class Shortener:
         self._code_to_url = table_type()
         self._next_id = 0
 
+    @property
+    def storage_table(self):
+        return self._url_to_code
+
     @staticmethod
     def _validate_url(url: str) -> None:
         if not isinstance(url, str):
