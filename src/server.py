@@ -5,6 +5,7 @@ from html import escape
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qsl, quote, unquote, urlsplit
 
+from src.hash_table import ChainingHashTable, LinearProbingHashTable
 from src.shortener import Shortener
 
 
@@ -165,8 +166,13 @@ def make_handler(shortener: Shortener):
     return ShortenerRequestHandler
 
 
-def serve(port: int = 8000, host: str = "") -> None:
-    server = HTTPServer((host, port), make_handler(Shortener()))
+def serve(
+    port: int = 8000,
+    host: str = "",
+    table_type: type[ChainingHashTable] | type[LinearProbingHashTable] = ChainingHashTable,
+) -> None:
+    shortener = Shortener(table_type=table_type)
+    server = HTTPServer((host, port), make_handler(shortener))
     try:
         print(f"Serving on http://{host or '0.0.0.0'}:{port}")
         server.serve_forever()
@@ -179,8 +185,16 @@ def serve(port: int = 8000, host: str = "") -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the URL shortener service")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument(
+        "--table-type", choices=("chaining", "linear"), default="chaining"
+    )
     args = parser.parse_args()
-    serve(port=args.port)
+    table_type = (
+        ChainingHashTable
+        if args.table_type == "chaining"
+        else LinearProbingHashTable
+    )
+    serve(port=args.port, table_type=table_type)
 
 
 if __name__ == "__main__":

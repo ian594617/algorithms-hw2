@@ -1,14 +1,36 @@
 import http.client
+import sys
 import threading
 import unittest
 from http.server import HTTPServer
+from unittest.mock import patch
 
-from src.hash_table import LinearProbingHashTable
-from src.server import make_handler
+from src.hash_table import ChainingHashTable, LinearProbingHashTable
+from src.server import main, make_handler
 from src.shortener import Shortener
 
 
 class LinearTablePageTests(unittest.TestCase):
+    def test_server_cli_defaults_to_chaining_table(self):
+        with (
+            patch.object(sys, "argv", ["server"]),
+            patch("src.server.serve") as serve,
+        ):
+            main()
+
+        serve.assert_called_once_with(port=8000, table_type=ChainingHashTable)
+
+    def test_server_cli_selects_linear_table(self):
+        with (
+            patch.object(sys, "argv", ["server", "--table-type", "linear"]),
+            patch("src.server.serve") as serve,
+        ):
+            main()
+
+        serve.assert_called_once_with(
+            port=8000, table_type=LinearProbingHashTable
+        )
+
     def test_table_page_shows_linear_probe_path(self):
         shortener = Shortener(table_type=LinearProbingHashTable)
         shortener.shorten("https://example.com/linear")
