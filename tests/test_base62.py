@@ -7,6 +7,18 @@ class Base62Tests(unittest.TestCase):
     def test_zero_encodes_as_zero(self):
         self.assertEqual(encode(0), "0")
 
+    def test_known_encodings(self):
+        expected = {
+            0: "0",
+            61: "Z",
+            62: "10",
+            3843: "ZZ",
+            3844: "100",
+        }
+        for value, code in expected.items():
+            with self.subTest(value=value):
+                self.assertEqual(encode(value), code)
+
     def test_round_trip_values(self):
         for value in (1, 61, 62, 3844, 2**128):
             with self.subTest(value=value):
