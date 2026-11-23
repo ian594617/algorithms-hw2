@@ -23,7 +23,8 @@
 - 생성자는 `initial_capacity=8`, `max_load_factor=0.75`, `auto_resize=True`를
   기본값으로 받는다. 용량은 양의 정수, 최대 적재율은 0보다 크고 1 이하인 수여야 한다.
 - `put(key, value)`는 키를 추가하거나 기존 값을 교체하고,
-  `get(key, default=None)`은 값을 조회한다. `contains(key)`는 키의 존재 여부,
+  `get(key, default=None)`과 `find(key)`는 값을 조회한다. `find(key)`의 미등록 키
+  결과는 `None`이다. `contains(key)`와 `key in table`은 키의 존재 여부,
   `delete(key)`는 삭제 성공 여부를 반환한다. `len(table)`은 항목 수다.
 - 체이닝 구현은 칸마다 연결 리스트를 사용한다. 선형 탐지 구현은 충돌한
   다음 칸부터 순서대로 검사하고, 배열 끝에서는 0번 칸으로 돌아간다.

@@ -18,6 +18,28 @@ class SharedHashTableTests(unittest.TestCase):
                 self.assertFalse(table.contains("one"))
                 self.assertEqual(len(table), 1)
 
+    def test_find_membership_and_load_factor_are_shared(self):
+        for table_type in (ChainingHashTable, LinearProbingHashTable):
+            with self.subTest(table_type=table_type.__name__):
+                table = table_type(initial_capacity=4, max_load_factor=0.5)
+
+                self.assertIsNone(table.find("missing"))
+                self.assertNotIn("missing", table)
+                self.assertEqual(table.load_factor, 0)
+
+                table.put("a", 1)
+                table.put("e", 2)
+                self.assertIn("a", table)
+                self.assertEqual(table.find("e"), 2)
+                self.assertEqual(table.load_factor, 0.5)
+
+                table.put("i", 3)
+                self.assertEqual(table.capacity, 8)
+                self.assertEqual(table.find("i"), 3)
+                self.assertEqual(table.load_factor, 3 / 8)
+                with self.assertRaises(TypeError):
+                    1 in table
+
 
 class LinearProbingHashTableTests(unittest.TestCase):
     def test_probe_wraps_from_last_slot_to_zero(self):

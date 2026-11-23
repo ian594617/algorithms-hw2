@@ -86,11 +86,19 @@ class _HashTableBase:
     def get(self, key: str, default: _Value = None) -> _Value:
         raise NotImplementedError
 
+    def find(self, key: str) -> _Value:
+        return self.get(key)
+
     def put(self, key: str, value: _Value) -> None:
         raise NotImplementedError
 
     def contains(self, key: str) -> bool:
         raise NotImplementedError
+
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            raise TypeError("keys must be strings")
+        return self.contains(key)
 
     def delete(self, key: str) -> bool:
         raise NotImplementedError
