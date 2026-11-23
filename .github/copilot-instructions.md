@@ -19,8 +19,9 @@
   to confirm the expected failure. Then implement the behavior and run `make test`.
 - Do not delete, weaken, or rewrite tests to make an implementation pass. If a test
   expectation is incorrect, explain why and make the smallest evidence-based correction.
-- Re-run the relevant tests after changes. Also run `make experiment` for experiment
-  changes and exercise web routes locally for server changes.
+- Re-run the relevant tests after changes. Also run `make experiment` and
+  `make experiment-compare` for experiment changes, `make report` for report
+  changes, and exercise web routes locally for server changes.
 - Keep manual checks, such as Codespaces port visibility and phone access, marked
   incomplete until a person verifies them.
 

@@ -1,0 +1,61 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+6 0 obj
+<< /Length 2254 >>
+stream
+BT /F1 16 Tf 50 755 Td (Hash Table Probe Costs - Algorithms HW2) Tj ET
+BT /F1 9 Tf 50 737 Td (Goal: compare measured probes with uniform-hashing expectations.) Tj ET
+BT /F1 9 Tf 50 723 Td (Capacity 503; same deterministic keys and insertion order for both tables.) Tj ET
+BT /F1 9 Tf 50 709 Td (Theory: chaining success 1+alpha/2, failure alpha.) Tj ET
+BT /F1 9 Tf 50 695 Td (Linear probing success 0.5*\(1+1/\(1-alpha\)\); failure 0.5*\(1+1/\(1-alpha\)^2\).) Tj ET
+BT /F1 9 Tf 50 681 Td (Measured / theoretical averages \(C=chaining, L=linear probing\):) Tj ET
+BT /F2 8 Tf 50 667 Td ( alpha       C success       L success       C failure       L failure) Tj ET
+BT /F2 7 Tf 50 653 Td ( 0.10     1.0/1.0          1.0/1.1          0.1/0.1          1.4/1.1) Tj ET
+BT /F2 7 Tf 50 639 Td ( 0.30     1.0/1.2          1.0/1.2          0.2/0.3          2.4/1.5) Tj ET
+BT /F2 7 Tf 50 625 Td ( 0.40     1.0/1.2          1.0/1.3          0.3/0.4          2.9/1.9) Tj ET
+BT /F2 7 Tf 50 611 Td ( 0.60     1.2/1.3          3.3/1.8          0.5/0.6          7.9/3.6) Tj ET
+BT /F2 7 Tf 50 597 Td ( 0.70     1.2/1.3          6.4/2.2          0.5/0.7          57.3/6.0) Tj ET
+BT /F2 7 Tf 50 583 Td ( 0.90     1.3/1.5          31.1/5.5          0.7/0.9          135.7/51.1) Tj ET
+BT /F1 8 Tf 50 569 Td () Tj ET
+BT /F1 11 Tf 50 555 Td (Interpretation) Tj ET
+BT /F1 9 Tf 50 537 Td (At alpha <= 0.4, both measured successful searches need about one probe.) Tj ET
+BT /F1 9 Tf 50 523 Td (At alpha=0.90, linear success is 31.1 vs 5.5 theory; failure is 135.7 vs 51.1.) Tj ET
+BT /F1 9 Tf 50 509 Td (The formulas are expected costs under uniform hashing, not guarantees.) Tj ET
+BT /F1 9 Tf 50 495 Td (Sequential keys with deterministic Horner hashing form primary clusters;) Tj ET
+BT /F1 9 Tf 50 481 Td (this workload greatly increases linear-probing costs at high load.) Tj ET
+BT /F1 8 Tf 50 467 Td () Tj ET
+BT /F1 11 Tf 50 453 Td (Separate-chaining load range \(alpha 0.25 to 4.0\)) Tj ET
+BT /F1 9 Tf 50 435 Td (alpha=0.25: success 1.00/1.13; failure 0.20/0.25 \(measured/theory\).) Tj ET
+BT /F1 9 Tf 50 421 Td (alpha=4.00: success 2.57/3.00; failure 4.02/4.00 \(measured/theory\).) Tj ET
+BT /F1 9 Tf 50 407 Td (One-page report; see the CSV and SVG files for full results.) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000257 00000 n 
+0000000327 00000 n 
+0000000395 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+2701
+%%EOF

@@ -1,9 +1,10 @@
 """Measure separate-chaining lookup costs and compare them with theory."""
 
 import csv
+import argparse
 from pathlib import Path
 
-from src.hash_table import ChainingHashTable
+from src.hash_table import ChainingHashTable, LinearProbingHashTable
 
 
 def chaining_theory(alpha: float) -> tuple[float, float]:
@@ -58,6 +59,170 @@ def run_chaining_experiment(
             )
         )
     return results
+
+
+def linear_probing_theory(alpha: float) -> tuple[float, float]:
+    if not 0 <= alpha < 1:
+        raise ValueError("linear-probing load factor must be in [0, 1)")
+    return 0.5 * (1 + 1 / (1 - alpha)), 0.5 * (1 + 1 / (1 - alpha) ** 2)
+
+
+def run_comparison_experiment(
+    load_factors: tuple[float, ...] | None = None,
+    capacity: int = 503,
+    failed_queries: int = 1000,
+) -> list[tuple[float, float, float, float, float, float, float, float, float]]:
+    if capacity <= 0 or failed_queries <= 0:
+        raise ValueError("capacity and failed_queries must be positive")
+    if load_factors is None:
+        load_factors = tuple(step / 10 for step in range(1, 10))
+
+    results = []
+    for requested_alpha in load_factors:
+        if not 0 < requested_alpha < 1:
+            raise ValueError("comparison load factors must be in (0, 1)")
+        key_count = max(1, round(requested_alpha * capacity))
+        tables = (
+            ChainingHashTable(
+                initial_capacity=capacity,
+                max_load_factor=1.0,
+                auto_resize=False,
+            ),
+            LinearProbingHashTable(
+                initial_capacity=capacity,
+                max_load_factor=1.0,
+                auto_resize=False,
+            ),
+        )
+        keys = [f"key-{index:06d}" for index in range(key_count)]
+        for index, key in enumerate(keys):
+            for table in tables:
+                table.put(key, index)
+
+        successful_probes = [0, 0]
+        for key in keys:
+            for index, table in enumerate(tables):
+                table.get(key)
+                successful_probes[index] += table.last_probes
+
+        failed_probes = [0, 0]
+        for query_index in range(failed_queries):
+            key = f"missing-{query_index:06d}"
+            for index, table in enumerate(tables):
+                table.get(key)
+                failed_probes[index] += table.last_probes
+
+        alpha = round(tables[0].load_factor, 6)
+        chaining_success, chaining_failure = chaining_theory(alpha)
+        linear_success, linear_failure = linear_probing_theory(alpha)
+        results.append(
+            (
+                alpha,
+                successful_probes[0] / key_count,
+                chaining_success,
+                failed_probes[0] / failed_queries,
+                chaining_failure,
+                successful_probes[1] / key_count,
+                linear_success,
+                failed_probes[1] / failed_queries,
+                linear_failure,
+            )
+        )
+    return results
+
+
+def write_comparison_outputs(
+    results: list[tuple[float, float, float, float, float, float, float, float, float]],
+    output_directory: Path | None = None,
+) -> tuple[Path, Path]:
+    directory = output_directory or Path(__file__).parent
+    directory.mkdir(parents=True, exist_ok=True)
+    csv_path = directory / "comparison_results.csv"
+    svg_path = directory / "comparison_results.svg"
+
+    with csv_path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            (
+                "load_factor",
+                "chaining_success_measured",
+                "chaining_success_theory",
+                "chaining_failure_measured",
+                "chaining_failure_theory",
+                "linear_success_measured",
+                "linear_success_theory",
+                "linear_failure_measured",
+                "linear_failure_theory",
+            )
+        )
+        writer.writerows(results)
+
+    width, height = 1040, 700
+    left, plot_width = 80, 650
+    x_min = min(row[0] for row in results)
+    x_max = max(row[0] for row in results)
+    panels = (
+        (
+            "Successful lookup comparisons",
+            (1, 2, 5, 6),
+            ("Chaining measured", "Chaining theory", "Linear measured", "Linear theory"),
+            ("#1565c0", "#64b5f6", "#2e7d32", "#81c784"),
+            260,
+            50,
+        ),
+        (
+            "Unsuccessful lookup comparisons",
+            (3, 4, 7, 8),
+            ("Chaining measured", "Chaining theory", "Linear measured", "Linear theory"),
+            ("#c62828", "#ef9a9a", "#6a1b9a", "#ce93d8"),
+            260,
+            390,
+        ),
+    )
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
+        '<rect width="100%" height="100%" fill="white"/>',
+    ]
+    for title, columns, labels, colors, plot_height, top in panels:
+        y_max = max(row[column] for row in results for column in columns) * 1.08
+
+        def point(alpha: float, value: float) -> tuple[float, float]:
+            x = left + (alpha - x_min) / (x_max - x_min) * plot_width
+            y = top + plot_height - value / y_max * plot_height
+            return x, y
+
+        svg.extend(
+            (
+                f'<text x="{left + plot_width / 2}" y="{top - 14}" text-anchor="middle" font-family="sans-serif" font-size="16">{title}</text>',
+                f'<line x1="{left}" y1="{top + plot_height}" x2="{left + plot_width}" y2="{top + plot_height}" stroke="black"/>',
+                f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_height}" stroke="black"/>',
+            )
+        )
+        for tick in range(5):
+            value = y_max * tick / 4
+            y = top + plot_height - value / y_max * plot_height
+            svg.append(f'<line x1="{left}" y1="{y:.1f}" x2="{left + plot_width}" y2="{y:.1f}" stroke="#ddd"/>')
+            svg.append(f'<text x="{left - 8}" y="{y + 4:.1f}" text-anchor="end" font-family="sans-serif" font-size="10">{value:.1f}</text>')
+        for series_index, (column, label, color) in enumerate(zip(columns, labels, colors)):
+            coordinates = " ".join(
+                f"{point(row[0], row[column])[0]:.1f},{point(row[0], row[column])[1]:.1f}"
+                for row in results
+            )
+            svg.append(f'<polyline points="{coordinates}" fill="none" stroke="{color}" stroke-width="2"/>')
+            legend_y = top + 18 + series_index * 18
+            svg.append(f'<line x1="{left + plot_width + 25}" y1="{legend_y}" x2="{left + plot_width + 45}" y2="{legend_y}" stroke="{color}" stroke-width="3"/>')
+            svg.append(f'<text x="{left + plot_width + 50}" y="{legend_y + 4}" font-family="sans-serif" font-size="11">{label}</text>')
+        for row in results:
+            x, y = point(row[0], 0)
+            svg.append(f'<text x="{x:.1f}" y="{top + plot_height + 16}" text-anchor="middle" font-family="sans-serif" font-size="10">{row[0]:.1f}</text>')
+    svg.extend(
+        (
+            '<text x="400" y="695" text-anchor="middle" font-family="sans-serif">Load factor (alpha)</text>',
+            "</svg>",
+        )
+    )
+    svg_path.write_text("\n".join(svg), encoding="utf-8")
+    return csv_path, svg_path
 
 
 def write_chaining_outputs(
@@ -134,12 +299,22 @@ def write_chaining_outputs(
 
 
 def main() -> None:
-    results = run_chaining_experiment()
-    write_chaining_outputs(results)
-    print("alpha,success_measured,success_theory,failure_measured,failure_theory")
-    for row in results:
-        print(",".join(f"{value:.4f}" for value in row))
-    print("Wrote experiments/probe_results.csv and experiments/probe_results.svg")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--compare", action="store_true")
+    args = parser.parse_args()
+    if args.compare:
+        results = run_comparison_experiment()
+        write_comparison_outputs(results)
+        print("Wrote experiments/comparison_results.csv and experiments/comparison_results.svg")
+        for row in results:
+            print(",".join(f"{value:.4f}" for value in row))
+    else:
+        results = run_chaining_experiment()
+        write_chaining_outputs(results)
+        print("alpha,success_measured,success_theory,failure_measured,failure_theory")
+        for row in results:
+            print(",".join(f"{value:.4f}" for value in row))
+        print("Wrote experiments/probe_results.csv and experiments/probe_results.svg")
 
 
 if __name__ == "__main__":
