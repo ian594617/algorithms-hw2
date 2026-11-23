@@ -1,10 +1,26 @@
 """Measure separate-chaining lookup costs and compare them with theory."""
 
-import csv
 import argparse
+import csv
+import random
 from pathlib import Path
 
 from src.hash_table import ChainingHashTable, LinearProbingHashTable
+
+
+DEFAULT_CHAINING_CAPACITY = 4093
+DEFAULT_RANDOM_SEED = 2026
+
+
+def _random_urls(
+    count: int, generator: random.Random, host_prefix: str = ""
+) -> list[str]:
+    identifiers = generator.sample(range(1 << 32), count)
+    return [
+        f"https://{host_prefix}{identifier:08x}.example.com/"
+        f"{generator.getrandbits(64):016x}"
+        for identifier in identifiers
+    ]
 
 
 def chaining_theory(alpha: float) -> tuple[float, float]:
@@ -15,14 +31,16 @@ def chaining_theory(alpha: float) -> tuple[float, float]:
 
 def run_chaining_experiment(
     load_factors: tuple[float, ...] | None = None,
-    capacity: int = 503,
+    capacity: int = DEFAULT_CHAINING_CAPACITY,
     failed_queries: int = 1000,
+    seed: int = DEFAULT_RANDOM_SEED,
 ) -> list[tuple[float, float, float, float, float]]:
     if capacity <= 0 or failed_queries <= 0:
         raise ValueError("capacity and failed_queries must be positive")
     if load_factors is None:
         load_factors = tuple(step / 4 for step in range(1, 17))
 
+    generator = random.Random(seed)
     results = []
     for requested_alpha in load_factors:
         if requested_alpha <= 0:
@@ -33,7 +51,7 @@ def run_chaining_experiment(
             max_load_factor=1.0,
             auto_resize=False,
         )
-        keys = [f"key-{index:06d}" for index in range(key_count)]
+        keys = _random_urls(key_count, generator)
         for index, key in enumerate(keys):
             table.put(key, index)
 
@@ -43,8 +61,8 @@ def run_chaining_experiment(
             successful_probes += table.last_probes
 
         failed_probes = 0
-        for index in range(failed_queries):
-            table.get(f"missing-{index:06d}")
+        for key in _random_urls(failed_queries, generator, "missing-"):
+            table.get(key)
             failed_probes += table.last_probes
 
         alpha = round(table.load_factor, 6)
@@ -231,11 +249,11 @@ def write_chaining_outputs(
 ) -> tuple[Path, Path]:
     directory = output_directory or Path(__file__).parent
     directory.mkdir(parents=True, exist_ok=True)
-    csv_path = directory / "probe_results.csv"
-    svg_path = directory / "probe_results.svg"
+    csv_path = directory / "results.csv"
+    svg_path = directory / "results.svg"
 
     with csv_path.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, lineterminator="\n")
         writer.writerow(
             (
                 "load_factor",
@@ -314,7 +332,7 @@ def main() -> None:
         print("alpha,success_measured,success_theory,failure_measured,failure_theory")
         for row in results:
             print(",".join(f"{value:.4f}" for value in row))
-        print("Wrote experiments/probe_results.csv and experiments/probe_results.svg")
+        print("Wrote experiments/results.csv and experiments/results.svg")
 
 
 if __name__ == "__main__":
