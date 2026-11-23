@@ -19,10 +19,11 @@
 
 | 파일 | 하는 일 |
 | --- | --- |
-| `SPEC.md` | 명세 틀. 에이전트가 초안을 쓰고 **본인이 고칩니다** |
-| `src/` · `tests/` · `experiments/` | 비어 있습니다. 수업에서 채웁니다 |
+| `SPEC.md` · `PLAN.md` | 프로젝트 명세와 구현 계획 |
+| `src/` · `tests/` · `experiments/` | 구현, 회귀 테스트, 탐색 비용 실험과 산출물 |
+| `.github/copilot-instructions.md` | 작업·테스트·Git 규칙 |
 | `tools/catchup.sh` | 수업 중 놓친 단계를 따라잡는 스크립트 |
-| `Makefile` | `make test` · `make serve` · `make experiment` |
+| `Makefile` | `make test` · `make serve` · `make experiment` · `make experiment-compare` · `make report` |
 
 정답 코드는 들어 있지 않습니다. 에이전트는 작업 공간의 파일을 읽으므로, 정답이
 옆에 있으면 그대로 베껴 와서 연습이 되지 않습니다.
@@ -35,7 +36,9 @@
 | --- | --- |
 | 테스트 | `make test` |
 | 웹 서버 (포트 8000) | `make serve` |
-| 충돌 실험 | `make experiment` |
+| 체이닝 충돌 실험 | `make experiment` |
+| 체이닝·선형 탐지 비교 | `make experiment-compare` |
+| 추가 과제 PDF 보고서 | `make report` |
 | 놓친 단계 따라잡기 | `sh tools/catchup.sh <단계 번호>` |
 
 외부 라이브러리는 쓰지 않습니다. Python 표준 모듈만으로 충분합니다.
