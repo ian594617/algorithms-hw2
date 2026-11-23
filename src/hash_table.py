@@ -1,7 +1,7 @@
 """String-key hash tables using Horner hashing."""
 
 import math
-from typing import TypeAlias
+from typing import NamedTuple, TypeAlias
 
 
 _Value: TypeAlias = object
@@ -14,6 +14,15 @@ class _Entry:
         self.key = key
         self.value = value
         self.next = next_entry
+
+
+class _DebugEntry(NamedTuple):
+    key: str
+    value: _Value
+    hash_index: int
+    hash_trace: tuple[int, ...]
+    probe_path: tuple[int, ...]
+    chain_position: int | None
 
 
 class _HashTableBase:
@@ -104,6 +113,9 @@ class _HashTableBase:
         raise NotImplementedError
 
     def debug_slots(self) -> list[tuple[int, tuple[str, ...]]]:
+        raise NotImplementedError
+
+    def debug_slot_entries(self) -> list[tuple[int, tuple[_DebugEntry, ...]]]:
         raise NotImplementedError
 
 
@@ -208,6 +220,29 @@ class ChainingHashTable(_HashTableBase):
                 )
                 entry = entry.next
             slots.append((index, tuple(details) if details else ("(empty)",)))
+        return slots
+
+    def debug_slot_entries(self) -> list[tuple[int, tuple[_DebugEntry, ...]]]:
+        slots = []
+        for index, head in enumerate(self._buckets):
+            entries = []
+            position = 0
+            entry = head
+            while entry is not None:
+                position += 1
+                _, trace = self._hash_details(entry.key)
+                entries.append(
+                    _DebugEntry(
+                        entry.key,
+                        entry.value,
+                        index,
+                        trace,
+                        (index,),
+                        position,
+                    )
+                )
+                entry = entry.next
+            slots.append((index, tuple(entries)))
         return slots
 
 
@@ -317,6 +352,38 @@ class LinearProbingHashTable(_HashTableBase):
                     f"start={start}; probe path={tuple(path)}",
                 )
             slots.append((index, details))
+        return slots
+
+    def debug_slot_entries(self) -> list[tuple[int, tuple[_DebugEntry, ...]]]:
+        slots = []
+        for index, entry in enumerate(self._slots):
+            if entry is None or entry is _TOMBSTONE:
+                slots.append((index, ()))
+                continue
+
+            start, trace = self._hash_details(entry.key)
+            path = []
+            probe_index = start
+            for _ in range(self._capacity):
+                path.append(probe_index)
+                if probe_index == index:
+                    break
+                probe_index = (probe_index + 1) % self._capacity
+            slots.append(
+                (
+                    index,
+                    (
+                        _DebugEntry(
+                            entry.key,
+                            entry.value,
+                            start,
+                            trace,
+                            tuple(path),
+                            None,
+                        ),
+                    ),
+                )
+            )
         return slots
 
 

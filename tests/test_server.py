@@ -84,6 +84,28 @@ class ServerTests(unittest.TestCase):
         self.assertIn(b"Horner trace", page)
         self.assertIn(b"chain position", page)
 
+    def test_table_page_shows_linked_nodes_and_expandable_hash_steps(self):
+        self.shortener.shorten("https://example.com/a")
+        self.shortener.shorten("https://example.com/i")
+        self.connection.request("GET", "/table")
+        response = self.connection.getresponse()
+
+        self.assertEqual(response.status, 200)
+        page = response.read()
+        for expected in (
+            b"https://example.com/a",
+            b"https://example.com/i",
+            b"Short link:",
+            b'href="/s/0"',
+            b'href="/s/1"',
+            b"&rarr;",
+            b"<details>",
+            b"<summary>",
+            b"31 *",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, page)
+
 
 if __name__ == "__main__":
     unittest.main()

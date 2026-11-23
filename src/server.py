@@ -29,6 +29,43 @@ def make_handler(shortener: Shortener):
                 f"<title>{escape(title)}</title><h1>{escape(title)}</h1>{body}</html>"
             )
 
+        def _render_table_entry(self, entry, capacity: int) -> str:
+            code = str(entry.value)
+            short_link = "/s/" + quote(code, safe="")
+            steps = []
+            previous = 0
+            for step, (character, value) in enumerate(
+                zip(entry.key, entry.hash_trace), start=1
+            ):
+                steps.append(
+                    "<li>"
+                    + escape(
+                        f"h_{step} = (31 * {previous} + ord({character!r})) "
+                        f"% {capacity} = {value}"
+                    )
+                    + "</li>"
+                )
+                previous = value
+            chain_position = (
+                ""
+                if entry.chain_position is None
+                else f"; chain position: {entry.chain_position}"
+            )
+            details = (
+                "<details><summary>Horner calculation</summary>"
+                f"<p>Horner trace: {escape(str(entry.hash_trace))}</p>"
+                f"<p>Start slot: {entry.hash_index}; probe path: "
+                f"{escape(str(entry.probe_path))}{chain_position}</p>"
+                f"<ol>{''.join(steps)}</ol></details>"
+            )
+            return (
+                '<div class="node">'
+                f"<p>URL: <code>{escape(entry.key)}</code></p>"
+                f"<p>Code: <code>{escape(code)}</code></p>"
+                f'<p>Short link: <a href="{escape(short_link)}">'
+                f"{escape(short_link)}</a></p>{details}</div>"
+            )
+
         def _request_path(self):
             try:
                 return urlsplit(self.path).path
@@ -54,10 +91,19 @@ def make_handler(shortener: Shortener):
                     "<p>Capacity: "
                     f"{table.capacity}; load factor: {table.load_factor:.3f}</p>",
                     "<table><thead><tr><th>Bucket/slot</th>"
-                    "<th>Contents and hash/probe details</th></tr></thead><tbody>",
+                    "<th>URL, code, short link and hash details</th>"
+                    "</tr></thead><tbody>",
                 ]
-                for index, details in table.debug_slots():
-                    content = "<br>".join(escape(detail) for detail in details)
+                for (index, details), (_, entries) in zip(
+                    table.debug_slots(), table.debug_slot_entries()
+                ):
+                    if entries:
+                        content = ' <span class="chain-arrow">&rarr;</span> '.join(
+                            self._render_table_entry(entry, table.capacity)
+                            for entry in entries
+                        )
+                    else:
+                        content = "<br>".join(escape(detail) for detail in details)
                     rows.append(f"<tr><td>{index}</td><td>{content}</td></tr>")
                 rows.append("</tbody></table>")
                 self._send_html(200, self._page("Hash table", "".join(rows)))
